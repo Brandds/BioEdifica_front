@@ -1,0 +1,210 @@
+:root {
+  --verde-principal: #388e3c;
+  --verde-escuro: #2e7d32;
+  --verde-claro: #66bb6a;
+  --cinza-texto: #607d8b;
+  --cinza-footer: #90a4ae;
+  --background-gradiente: linear-gradient(90deg, var(--verde-escuro) 60%, var(--verde-claro) 100%);
+}
+
+
+.home-container {
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fa;
+}
+
+
+.home-header {
+  background: var(--background-gradiente);
+  color: #fff;
+  text-align: center;
+  width: 100%;
+}
+
+.home-header h1 {
+  font-size: 2.2rem;
+  margin-bottom: 0.2em;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.home-header p {
+  color: #e0f2f1;
+  font-size: 1.1rem;
+}
+
+.projetos-section,
+.categorias-section {
+  width: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
+  box-sizing: border-box;
+}
+
+.projetos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.projetos-header h2 {
+  color: var(--verde-escuro);
+  font-size: 1.3rem;
+}
+
+.ver-tudo-btn {
+  background: none;
+  border: 1px solid var(--verde-principal);
+  color: var(--verde-principal);
+  border-radius: 20px;
+  padding: 0.3em 1.2em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ver-tudo-btn:hover {
+  background: var(--verde-principal);
+  color: #fff;
+}
+
+.projetos-lista,
+.categorias-grid {
+  width: 100%;
+  gap: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: stretch;
+  align-items: stretch;
+}
+
+.projeto-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  padding: 18px 28px;
+  font-size: 1.08rem;
+  color: var(--cinza-texto);
+  flex: 1 1 0; /* cresce até ocupar o espaço, mas nunca menor que 180px */
+  min-width: 180px;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 24px 0;
+}
+
+.criar-projeto-btn {
+  background: #fff;
+  border: 1.5px solid var(--verde-principal);
+  color: var(--verde-principal);
+  border-radius: 10px;
+  padding: 18px 28px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  transition: background 0.2s, color 0.2s;
+  flex: 1 1 0; /* cresce até ocupar o espaço, mas nunca menor que 180px */
+  min-width: 180px;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 24px 0;
+}
+
+.criar-projeto-btn .plus {
+  font-size: 1.3em;
+  color: var(--verde-principal);
+}
+
+.criar-projeto-btn:hover {
+  background: var(--verde-principal);
+  color: #fff;
+}
+
+.categorias-section h2 {
+  color: var(--verde-escuro);
+  font-size: 1.2rem;
+  margin-bottom: 18px;
+}
+
+.categorias-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.categoria-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  width: 180px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: box-shadow 0.2s, transform 0.2s;
+  overflow: hidden;
+  outline: none;
+  flex: 1 1 180px; /* cresce até ocupar o espaço, mas nunca menor que 180px */
+  min-width: 180px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.categoria-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.categoria-card span {
+  color: var(--verde-principal);
+  font-weight: 600;
+  font-size: 1.08rem;
+  margin: 12px 0 14px 0;
+}
+
+.categoria-card:hover, .categoria-card:focus {
+  box-shadow: 0 4px 16px rgba(44, 62, 80, 0.16);
+  transform: translateY(-4px) scale(1.03);
+}
+
+.categoria-card,
+.projeto-card,
+.criar-projeto-btn {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 24px 0;
+  width: auto;
+}
+
+@media (max-width: 900px) {
+  .projetos-lista, .categorias-grid {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .categoria-card, .projeto-card, .criar-projeto-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 600px) {
+  .projetos-section,
+  .categorias-section {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
