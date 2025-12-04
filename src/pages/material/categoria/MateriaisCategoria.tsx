@@ -22,6 +22,8 @@ import CarrinhoMateriaisDrawer from '../../../components/material/CarrinhoMateri
 import { MaterialCard } from '../../../components/material/MaterialCard';
 import { MaterialCategoriaCard } from '../../../components/material/MaterialCatergoriaCard';
 import { mockMaterialsService } from '../../../service/api';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { adicionarMaterial } from '../../../store/slices/carrinhoSlice';
 import '../../../styles/home/Home.css';
 import '../../../styles/materiais/MateriaisCategoria.css';
 import { appBarSxMaterialCategoria } from '../../../styles/sx/AppBar';
@@ -29,13 +31,15 @@ import type { FiltroMaterialType } from '../../../types/filtro/filtroType';
 import type { MaterialCategoriaDTO, MaterialVisualizacaoDTO } from '../../../types/material/materialType';
 
 export default function MateriaisCategoria() {
+  const dispatch = useAppDispatch();
+  const materiaisSelecionados = useAppSelector(state => state.carrinho.materiais);
+
   const [drawerOpen, setDrawerOpen] = useState(window.innerWidth >= 900);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [textoBusca, setTextoBusca] = useState<string>('');
   const [conteudoBusca, setConteudoBusca] = useState<MaterialCategoriaDTO[]>([]);
   const [materiaisFiltrados, setMateriaisFiltrados] = useState<MaterialVisualizacaoDTO[]>([]);
   const [materiaisFiltradosExibidos, setMateriaisFiltradosExibidos] = useState<MaterialVisualizacaoDTO[]>([]);
-  const [materiaisSelecionados, setMateriaisSelecionados] = useState<MaterialVisualizacaoDTO[]>([]);
   const [filtro, setFiltro] = useState<FiltroMaterialType[]>([]);
   const [filtrosSelecionados, setFiltrosSelecionados] = useState<Record<string, string[]>>({});
   const [modoVisualizacao, setModoVisualizacao] = useState<'categorias' | 'materiais'>('categorias');
@@ -199,27 +203,7 @@ export default function MateriaisCategoria() {
   }
 
   const adicionarMaterialAoCarrinho = (material: MaterialVisualizacaoDTO) => {
-    // Verifica se o material já está no carrinho
-    const jaExiste = materiaisSelecionados.some(m => m.id === material.id);
-
-    if (!jaExiste) {
-      setMateriaisSelecionados(prev => [...prev, material]);
-    }
-  }
-
-  const removerMaterialDoCarrinho = (materialId: number) => {
-    setMateriaisSelecionados(prev => prev.filter(m => m.id !== materialId));
-  }
-
-  const handleAdicionarAoProjeto = (projetoId: number, materiais: MaterialVisualizacaoDTO[]) => {
-    // Aqui você pode implementar a lógica para adicionar ao projeto via API
-    console.log('Materiais selecionados para adicionar ao projeto:', materiais);
-    console.log('Projeto selecionado:', projetoId);
-    alert(`${materiais.length} materiais serão adicionados ao projeto ${projetoId}!`);
-
-    // Limpar carrinho após adicionar
-    setMateriaisSelecionados([]);
-    setCartDrawerOpen(false);
+    dispatch(adicionarMaterial(material));
   }
 
   const verMateriaisPorCategoria = async (tipoMaterial: string) => {
@@ -433,9 +417,6 @@ export default function MateriaisCategoria() {
       <CarrinhoMateriaisDrawer
         open={cartDrawerOpen}
         onClose={() => setCartDrawerOpen(false)}
-        materiaisSelecionados={materiaisSelecionados}
-        onRemoverMaterial={removerMaterialDoCarrinho}
-        onAdicionarAoProjeto={handleAdicionarAoProjeto}
       />
     </Box>
   );

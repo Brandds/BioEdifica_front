@@ -11,7 +11,8 @@ import { useEffect, useState } from 'react';
 import { calculoTermicoService } from '../../service/calculoTermicoService';
 import { materialProjetoService } from '../../service/materialProjetoService';
 import { projetoService } from '../../service/projetoService';
-import { useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { atualizarEspessura, limparCarrinho, removerMaterial, setTipoCamada } from '../../store/slices/carrinhoSlice';
 import type { CalculoTermicoResponseDTO } from '../../types/calculoTermico/calculoTermicoType';
 import type { MaterialVisualizacaoDTO } from '../../types/material/materialType';
 import type { ProjetoDTO } from '../../types/projeto/projetoType';
@@ -24,41 +25,22 @@ interface MaterialComEspessura extends MaterialVisualizacaoDTO {
 interface CarrinhoMateriaisDrawerProps {
   open: boolean;
   onClose: () => void;
-  materiaisSelecionados: MaterialVisualizacaoDTO[];
-  onRemoverMaterial: (materialId: number) => void;
-  onAdicionarAoProjeto: (projetoId: number, materiais: MaterialVisualizacaoDTO[]) => void;
 }
 
 export default function CarrinhoMateriaisDrawer({
   open,
-  onClose,
-  materiaisSelecionados,
-  onRemoverMaterial,
-  onAdicionarAoProjeto
+  onClose
 }: CarrinhoMateriaisDrawerProps) {
+  const dispatch = useAppDispatch();
+  const { materiais: materiaisSelecionados, tipoCamada } = useAppSelector(state => state.carrinho);
+  const user = useAppSelector((state) => state.auth.user);
+
   const [projetos, setProjetos] = useState<ProjetoDTO[]>([]);
   const [projetoSelecionado, setProjetoSelecionado] = useState<number | ''>('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [materiaisComEspessura, setMateriaisComEspessura] = useState<MaterialComEspessura[]>([]);
-  const [tipoCamada, setTipoCamada] = useState<string>('PAREDE');
   const [resultadoCalculo, setResultadoCalculo] = useState<CalculoTermicoResponseDTO | null>(null);
   const [dialogCalculoOpen, setDialogCalculoOpen] = useState(false);
-  const user = useAppSelector((state) => state.auth.user);
-
-
-  // Atualiza materiais com espessura quando a lista de selecionados muda
-  useEffect(() => {
-    const novosMateriaisComEspessura = materiaisSelecionados.map((material, index) => {
-      const materialExistente = materiaisComEspessura.find(m => m.id === material.id);
-      return {
-        ...material,
-        espessura: materialExistente?.espessura || 10, // Valor padrão: 10 cm
-        ordem: index + 1
-      };
-    });
-    setMateriaisComEspessura(novosMateriaisComEspessura);
-  }, [materiaisSelecionados]);
 
   useEffect(() => {
     if (open && materiaisSelecionados.length > 0) {
@@ -78,7 +60,7 @@ export default function CarrinhoMateriaisDrawer({
   };
 
   const handleAdicionarAoProjeto = async () => {
-    if (materiaisComEspessura.length === 0) {
+    if (materiaisSelecionados.length === 0) {
       setSnackbarMessage('Selecione pelo menos um material para adicionar ao projeto.');
       setSnackbarOpen(true);
       return;
@@ -93,7 +75,7 @@ export default function CarrinhoMateriaisDrawer({
     try {
       const request = {
         tipoCamada,
-        materiais: materiaisComEspessura.map(m => ({
+        materiais: materiaisSelecionados.map(m => ({
           idMaterialMock: m.id,
           espessura: m.espessura / 100, // Converte centímetros para metros
           ordem: m.ordem
@@ -105,6 +87,7 @@ export default function CarrinhoMateriaisDrawer({
       setSnackbarMessage('Materiais adicionados ao projeto com sucesso!');
       setSnackbarOpen(true);
       setProjetoSelecionado('');
+      dispatch(limparCarrinho());
       onClose();
     } catch (error) {
       console.error('Erro ao adicionar materiais ao projeto:', error);
@@ -114,15 +97,21 @@ export default function CarrinhoMateriaisDrawer({
   };
 
   const handleAlterarEspessura = (materialId: number, novaEspessura: number) => {
-    setMateriaisComEspessura(prev =>
-      prev.map(m =>
-        m.id === materialId ? { ...m, espessura: novaEspessura } : m
-      )
-    );
+    dispatch(atualizarEspessura({ id: materialId, espessura: novaEspessura }));
+  };
+
+  const handleRemoverMaterial = (materialId: number) => {
+    dispatch(removerMaterial(materialId));
+  };
+
+  const handleLimparCarrinho = () => {
+    dispatch(limparCarrinho());
+    setSnackbarMessage('Carrinho limpo com sucesso!');
+    setSnackbarOpen(true);
   };
 
   const handleCalcularPropriedades = async () => {
-    if (materiaisComEspessura.length === 0) {
+    if (materiaisSelecionados.length === 0) {
       setSnackbarMessage('Adicione materiais ao carrinho antes de calcular.');
       setSnackbarOpen(true);
       return;
@@ -131,7 +120,7 @@ export default function CarrinhoMateriaisDrawer({
     try {
       const request = {
         tipoCamada,
-        materiais: materiaisComEspessura.map(m => ({
+        materiais: materiaisSelecionados.map(m => ({
           idMaterialMock: m.id,
           espessura: m.espessura / 100, // Converte centímetros para metros
           ordem: m.ordem
@@ -279,7 +268,7 @@ export default function CarrinhoMateriaisDrawer({
 
         {/* Lista de Materiais no Carrinho */}
         <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
-          {materiaisComEspessura.length === 0 ? (
+          {materiaisSelecionados.length === 0 ? (
             <Box sx={{ textAlign: 'center', mt: 8 }}>
               <ShoppingCartIcon sx={{ fontSize: 80, color: '#ccc', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
@@ -290,7 +279,7 @@ export default function CarrinhoMateriaisDrawer({
               </Typography>
             </Box>
           ) : (
-            materiaisComEspessura.map((material) => (
+            materiaisSelecionados.map((material) => (
               <Card key={material.id} sx={{ mb: 2, position: 'relative' }}>
                 <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                   <CardMedia
@@ -316,7 +305,7 @@ export default function CarrinhoMateriaisDrawer({
                     </CardContent>
                     <IconButton
                       aria-label="remover"
-                      onClick={() => onRemoverMaterial(material.id)}
+                      onClick={() => handleRemoverMaterial(material.id)}
                       sx={{
                         position: 'absolute',
                         top: 8,
@@ -349,7 +338,7 @@ export default function CarrinhoMateriaisDrawer({
         {/* Footer - Seleção de Projeto, Total e Botão */}
         <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2 }}>
           {/* Seleção de Tipo de Camada */}
-          {materiaisComEspessura.length > 0 && (
+          {materiaisSelecionados.length > 0 && (
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel id="select-tipo-camada-label">Tipo de Camada</InputLabel>
               <Select
@@ -357,7 +346,7 @@ export default function CarrinhoMateriaisDrawer({
                 id="select-tipo-camada"
                 value={tipoCamada}
                 label="Tipo de Camada"
-                onChange={(e) => setTipoCamada(e.target.value)}
+                onChange={(e) => dispatch(setTipoCamada(e.target.value))}
               >
                 <MenuItem value="PAREDE">Parede</MenuItem>
                 <MenuItem value="COBERTURA">Cobertura</MenuItem>
@@ -367,7 +356,7 @@ export default function CarrinhoMateriaisDrawer({
           )}
 
           {/* Seleção de Projeto - só aparece se tiver materiais */}
-          {materiaisComEspessura.length > 0 && (
+          {materiaisSelecionados.length > 0 && (
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel id="select-projeto-label">Selecione o Projeto</InputLabel>
               <Select
@@ -392,9 +381,29 @@ export default function CarrinhoMateriaisDrawer({
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6">Total</Typography>
             <Typography variant="h6" color="success.main" fontWeight={700}>
-              {materiaisComEspessura.length} {materiaisComEspessura.length === 1 ? 'material' : 'materiais'}
+              {materiaisSelecionados.length} {materiaisSelecionados.length === 1 ? 'material' : 'materiais'}
             </Typography>
           </Box>
+
+          {/* Botão Limpar Carrinho */}
+          {materiaisSelecionados.length > 0 && (
+            <Button
+              variant="outlined"
+              color="error"
+              fullWidth
+              size="large"
+              startIcon={<DeleteIcon />}
+              onClick={handleLimparCarrinho}
+              sx={{
+                py: 1.5,
+                fontWeight: 600,
+                fontSize: '1rem',
+                mb: 2
+              }}
+            >
+              Limpar Todos os Materiais
+            </Button>
+          )}
 
           {/* Botão Fazer Cálculos */}
           <Button
@@ -404,7 +413,7 @@ export default function CarrinhoMateriaisDrawer({
             size="large"
             startIcon={<CalculateIcon />}
             onClick={handleCalcularPropriedades}
-            disabled={materiaisComEspessura.length === 0}
+            disabled={materiaisSelecionados.length === 0}
             sx={{
               py: 1.5,
               fontWeight: 600,
@@ -422,7 +431,7 @@ export default function CarrinhoMateriaisDrawer({
             size="large"
             startIcon={<AddIcon />}
             onClick={handleAdicionarAoProjeto}
-            disabled={materiaisComEspessura.length === 0}
+            disabled={materiaisSelecionados.length === 0}
             sx={{
               py: 1.5,
               fontWeight: 600,
