@@ -94,7 +94,7 @@ export default function Home() {
                 fontSize: { xs: '2.5rem', md: '4rem' },
               }}
             >
-              Lorem Ipsum
+              Construa o Futuro Sustentável
             </Typography>
             <Typography
               variant="h6"
@@ -104,8 +104,7 @@ export default function Home() {
                 fontSize: { xs: '1rem', md: '1.2rem' },
               }}
             >
-              Lorem ipsum dolor sit amet, consectetur
-              adipiscing elit.
+              Otimize o desempenho térmico e reduza o impacto ambiental das suas edificações com dados confiáveis e cálculos automatizados.
             </Typography>
           </Box>
         </Box>
