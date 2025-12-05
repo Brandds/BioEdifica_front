@@ -240,6 +240,11 @@ export default function Cadastro() {
                   >
                     <MenuItem value="ARQUITETO">Arquiteto</MenuItem>
                     <MenuItem value="ENGENHEIRO">Engenheiro</MenuItem>
+                    <MenuItem value="GESTOR_PUBLICO">Gestor Público</MenuItem>
+                    <MenuItem value="PROFESSOR">Professor</MenuItem>
+                    <MenuItem value="TECNICO_EDIFICACOES">Técnico em Edificações</MenuItem>
+                    <MenuItem value="CONSULTOR_SUSTENTABILIDADE">Consultor em Sustentabilidade</MenuItem>
+                    <MenuItem value="ESTUDANTE">Estudante</MenuItem>
                   </Select>
                   {errors.perfil && (
                     <FormHelperText>{errors.perfil.message}</FormHelperText>

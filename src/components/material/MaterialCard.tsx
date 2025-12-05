@@ -1,5 +1,5 @@
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TuneIcon from '@mui/icons-material/Tune';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -55,15 +55,23 @@ export function MaterialCard(props: MaterialCardProps) {
               Ver Detalhes
             </Button>
             {props.onAddToCart && !props.modoRemocao && (
-              <IconButton
+              <Button
+                variant="contained"
                 color="success"
+                size="small"
+                startIcon={<TuneIcon />}
                 sx={{
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                  bgcolor: 'rgba(255, 255, 255, 0.9)',
+                  bgcolor: 'rgba(76, 175, 80, 0.95)',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  px: 1.5,
+                  py: 0.5,
                   '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 1)',
+                    bgcolor: 'rgba(76, 175, 80, 1)',
                   },
                 }}
                 onClick={(e) => {
@@ -71,8 +79,8 @@ export function MaterialCard(props: MaterialCardProps) {
                   props.onAddToCart?.();
                 }}
               >
-                <AddShoppingCartIcon />
-              </IconButton>
+                Adicionar Configuração
+              </Button>
             )}
             {props.modoRemocao && props.onRemove && (
               <IconButton

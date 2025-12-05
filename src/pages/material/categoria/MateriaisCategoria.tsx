@@ -1,7 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SettingsIcon from '@mui/icons-material/Settings';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -398,7 +398,7 @@ export default function MateriaisCategoria() {
       {modoVisualizacao === 'materiais' && materiaisFiltrados.length > 0 && (
         <Fab
           color="success"
-          aria-label="carrinho de materiais"
+          aria-label="configuração de materiais"
           onClick={() => setCartDrawerOpen(true)}
           sx={{
             position: 'fixed',
@@ -408,7 +408,7 @@ export default function MateriaisCategoria() {
           }}
         >
           <Badge badgeContent={materiaisSelecionados.length} color="error">
-            <ShoppingCartIcon />
+            <SettingsIcon />
           </Badge>
         </Fab>
       )}

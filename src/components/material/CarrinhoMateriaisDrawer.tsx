@@ -3,7 +3,7 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, Grid, IconButton, InputLabel, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -259,7 +259,7 @@ export default function CarrinhoMateriaisDrawer({
         {/* Header do Carrinho */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5" sx={{ color: '#388e3c', fontWeight: 700 }}>
-            Materiais Selecionados
+            Configuração de Materiais
           </Typography>
           <IconButton onClick={onClose} color="primary">
             <CloseIcon />
@@ -270,12 +270,12 @@ export default function CarrinhoMateriaisDrawer({
         <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
           {materiaisSelecionados.length === 0 ? (
             <Box sx={{ textAlign: 'center', mt: 8 }}>
-              <ShoppingCartIcon sx={{ fontSize: 80, color: '#ccc', mb: 2 }} />
+              <SettingsIcon sx={{ fontSize: 80, color: '#ccc', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
                 Nenhum material selecionado
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Adicione materiais ao carrinho para incluí-los no projeto
+                Adicione materiais à configuração para incluí-los no projeto
               </Typography>
             </Box>
           ) : (

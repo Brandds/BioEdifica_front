@@ -1,4 +1,4 @@
-type UserRole = 'ADMIN' | 'ARQUITETO' | 'ENGENHEIRO';
+type UserRole = 'ADMIN' | 'ARQUITETO' | 'ENGENHEIRO' | 'GESTOR_PUBLICO' | 'PROFESSOR' | 'TECNICO_EDIFICACOES' | 'CONSULTOR_SUSTENTABILIDADE' | 'ESTUDANTE';
 
 interface User {
   userId: number;

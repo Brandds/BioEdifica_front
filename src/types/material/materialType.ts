@@ -48,4 +48,5 @@ export interface MaterialDTO {
   generic_api_url: string;
   calor_especifico?: number;
   condutividade_termica?: number;
+  espessura?: number;
 }

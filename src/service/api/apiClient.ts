@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { URL_API } from '../../constants/URL_API.';
 import { storage } from '../../utils/storage';
+import { URL_API } from '../../constants/URL_API.';
 
 const apiClient = axios.create({
   baseURL: URL_API, 
@@ -11,25 +11,10 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    // URLs públicas que não devem incluir token
-    const publicUrls = [
-      '/usuarios/criaUsuario',
-      '/usuarios/login'
-    ];
-    
-    // Verifica se a URL atual é pública
-    const isPublicUrl = publicUrls.some(publicUrl => 
-      config.url?.includes(publicUrl)
-    );
-    
-    // Apenas adiciona o token se não for uma rota pública
-    if (!isPublicUrl) {
-      const token = storage.getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    const token = storage.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
     return config;
   },
   (error) => Promise.reject(error)

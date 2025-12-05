@@ -261,6 +261,14 @@ export default function MaterialDetalhe() {
                   </Typography>
                 </Grid>
               )}
+              {material.espessura && (
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Espessura</Typography>
+                  <Typography variant="body1" fontWeight={600}>
+                    {material.espessura} cm
+                  </Typography>
+                </Grid>
+              )}
               <Grid item xs={6}>
                 <Typography variant="body2" color="text.secondary">Massa por Unidade</Typography>
                 <Typography variant="body1" fontWeight={600}>
