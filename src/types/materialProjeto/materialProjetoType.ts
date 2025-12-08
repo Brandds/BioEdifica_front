@@ -17,6 +17,7 @@ interface MaterialCalculoDTO {
 }
 
 interface AdicionarMaterialDoCatalogoDTO {
+  nomeCamada?: string; // Nome da camada (opcional - se não fornecido, usa "Camada {tipoCamada}")
   tipoCamada: string; // PAREDE, COBERTURA, PISO
   materiais: MaterialCalculoDTO[];
 }
@@ -28,6 +29,6 @@ interface AdicionarMaterialProjetoDTO{
 }
 
 export type {
-  AdicionarMaterialDoCatalogoDTO, AdicionarMaterialProjetoDTO, MaterialCalculoDTO, MaterialProjetoDTO
+    AdicionarMaterialDoCatalogoDTO, AdicionarMaterialProjetoDTO, MaterialCalculoDTO, MaterialProjetoDTO
 };
 

@@ -84,24 +84,24 @@ export default function MateriaisCategoria() {
   }
 
   const montarFiltroDinamico = (materiais: MaterialCategoriaDTO[]) => {
-    const tipoProduto = Array.from(new Set(materiais.map(mat => mat.tipoMaterial)));
-    const aplicacao = Array.from(new Set(materiais.map(mat => mat.tipoProduto)));
-    const tipoFamiliaMaterial = Array.from(new Set(materiais.map(mat => mat.tipoFamiliaMaterial)));
+    const tipoProduto = Array.from(new Set(materiais.map(mat => mat.tipoMaterial))).filter(Boolean).sort();
+    const aplicacao = Array.from(new Set(materiais.map(mat => mat.tipoProduto))).filter(Boolean).sort();
+    const tipoFamiliaMaterial = Array.from(new Set(materiais.map(mat => mat.tipoFamiliaMaterial))).filter(Boolean).sort();
     const filtrosDinamicos: FiltroMaterialType[] = [
       {
         nome: 'Tipo de Material',
-        opcoes: tipoProduto.filter(Boolean)
+        opcoes: tipoProduto
       },
       {
         nome: 'Tipo de Produto',
-        opcoes: aplicacao.filter(Boolean)
+        opcoes: aplicacao
       },
       {
         nome: 'Tipo de Família do Material',
-        opcoes: tipoFamiliaMaterial.filter(Boolean)
+        opcoes: tipoFamiliaMaterial
       }
     ];
-    console.log(tipoFamiliaMaterial.filter(Boolean))
+    console.log(tipoFamiliaMaterial)
     setFiltro(filtrosDinamicos);
   }
 

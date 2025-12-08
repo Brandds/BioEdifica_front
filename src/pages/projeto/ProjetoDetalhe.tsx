@@ -8,18 +8,21 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Alert, Badge, Box, Button, Card, CardContent, CardMedia, Drawer, IconButton, Paper, Snackbar, SpeedDial, SpeedDialAction, SpeedDialIcon, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { CamadaCard } from '../../components/camada/CamadaCard';
 import CarbonoIncorporadoModal from '../../components/carbonoIncorporado/CarbonoIncorporadoModal';
 import ResponsiveAppBar from '../../components/header/ResponsiveAppBar';
 import CadastrarMaterialDrawer from '../../components/material/CadastrarMaterialDrawer';
 import { MaterialCard } from '../../components/material/MaterialCard';
 import CriarProjeto from '../../components/projeto/CriarProjeto';
 import { calculoTermicoService } from '../../service/calculoTermicoService';
+import { camadaService } from '../../service/camadaService';
 import { materialProjetoService } from '../../service/materialProjetoService';
 import { projetoService } from '../../service/projetoService';
 import { useAppDispatch } from '../../store/hooks';
 import { hideLoading, showLoading } from '../../store/slices/loadingSlice';
 import { appBarSxMaterialCategoria } from '../../styles/sx/AppBar';
 import { projetoSx } from '../../styles/sx/projeto/ProjetoSx';
+import type { CamadaResponseDTO } from '../../types/camada/camadaType';
 import type { CarbonoIncorporadoResponseDTO } from '../../types/carbonoIncorporado/carbonoIncorporadoType';
 import type { MaterialVisualizacaoDTO } from '../../types/material/materialType';
 import type { ProjetoDetalhadoDTO } from '../../types/projeto/projetoType';
@@ -35,6 +38,7 @@ export default function ProjetoDetalhe() {
 
   const [projeto, setProjeto] = useState<ProjetoDetalhadoDTO | null>(null);
   const [materiais, setMateriais] = useState<MaterialVisualizacaoDTO[]>([]);
+  const [camadas, setCamadas] = useState<CamadaResponseDTO[]>([]);
   const [materiaisParaRemover, setMateriaisParaRemover] = useState<MaterialVisualizacaoDTO[]>([]);
   const [drawerRemocaoOpen, setDrawerRemocaoOpen] = useState(false);
   const [drawerCadastroOpen, setDrawerCadastroOpen] = useState(false);
@@ -59,15 +63,18 @@ export default function ProjetoDetalhe() {
 
     try {
       const projetoId = Number(id);
-
       // Executar todas as requisições em paralelo
-      const [projetoData, materiaisData] = await Promise.all([
+      const [projetoData, materiaisData, camadasData] = await Promise.all([
         projetoService.getProjetoById(projetoId),
-        materialProjetoService.buscarMateriaisComPropriedadesTermicas(projetoId)
+        materialProjetoService.buscarMateriaisComPropriedadesTermicas(projetoId),
+        camadaService.listarCamadasPorProjeto(projetoId)
       ]);
 
       setProjeto(projetoData);
       setMateriais(materiaisData);
+      setCamadas(camadasData);
+      console.log('Materiais do projeto:', materiaisData);
+      console.log('Camadas do projeto:', camadasData);
       console.log('Materiais do projeto:', materiaisData);
     } catch (error) {
       console.error('Erro ao carregar dados do projeto:', error);
@@ -151,6 +158,27 @@ export default function ProjetoDetalhe() {
     } catch (error) {
       console.error('Erro ao calcular carbono incorporado:', error);
       setSnackbarMessage('Erro ao calcular carbono incorporado. Tente novamente.');
+    }
+  };
+
+  const handleExcluirCamada = async (camadaId: number) => {
+    if (!window.confirm('Deseja realmente excluir esta camada? Os materiais associados serão removidos.')) {
+      return;
+    }
+
+    dispatch(showLoading('Excluindo camada...'));
+
+    try {
+      await camadaService.excluirCamada(camadaId);
+
+      // Recarregar dados
+      await carregarDadosIniciais();
+
+      setSnackbarMessage('Camada excluída com sucesso!');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Erro ao excluir camada:', error);
+      setSnackbarMessage('Erro ao excluir camada. Tente novamente.');
       setSnackbarOpen(true);
     } finally {
       dispatch(hideLoading());
@@ -193,10 +221,6 @@ export default function ProjetoDetalhe() {
     },
   ];
 
-
-
-
-
   if (projetoNaoEncontrado) {
     return (
       <Box sx={projetoSx}>
@@ -226,6 +250,26 @@ export default function ProjetoDetalhe() {
         <Box sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}>
           <CriarProjeto projeto={projeto} />
         </Box>
+
+        {/* Seção de Camadas */}
+        <Typography variant="h6" color="primary.main" sx={{ mt: 4, mb: 2 }}>
+          Camadas do Projeto
+        </Typography>
+        {camadas.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+            Nenhuma camada criada ainda. Adicione materiais e crie camadas para calcular propriedades térmicas.
+          </Typography>
+        ) : (
+          <Box sx={{ mb: 4 }}>
+            {camadas.map((camada) => (
+              <CamadaCard
+                key={camada.id}
+                camada={camada}
+                onDelete={handleExcluirCamada}
+              />
+            ))}
+          </Box>
+        )}
 
         <Typography variant="h6" color="success.main" sx={{ mt: 4, mb: 2 }}>
           Materiais adicionados ao projeto
