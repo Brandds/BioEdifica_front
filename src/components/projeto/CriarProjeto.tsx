@@ -1,5 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Alert, Box, Button, Card, CardContent, Chip, Divider, FormControl, Grid, InputLabel, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, FormControl, Grid, InputLabel, MenuItem, Paper, Select, Snackbar, TextField, Typography } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -38,11 +39,11 @@ export default function CriarProjeto({ projeto, onSubmit }: CriarProjetoProps) {
 
   // Estados para seleção de cidade
   const [cidades, setCidades] = useState<CidadeDTO[]>([]);
-  const [cidadesFiltradas, setCidadesFiltradas] = useState<CidadeDTO[]>([]);
   const [cidadeSelecionada, setCidadeSelecionada] = useState<CidadeDTO | null>(null);
   const [filtroUF, setFiltroUF] = useState<string>('');
   const [filtroBusca, setFiltroBusca] = useState<string>('');
   const [loadingCidades, setLoadingCidades] = useState(false);
+  const [buscaRealizada, setBuscaRealizada] = useState(false);
 
   const user = useAppSelector((state) => state.auth.user);
 
@@ -67,7 +68,7 @@ export default function CriarProjeto({ projeto, onSubmit }: CriarProjetoProps) {
         areaTotalConstruida: projeto.areaTotalConstruida || 5000,
       });
 
-      // Se o projeto já tem cidade, definir como selecionada
+      // Se o projeto já tem cidade, definir como selecionada e buscar
       if (projeto.cidade) {
         const cidadeDTO: CidadeDTO = {
           id: projeto.cidade.id,
@@ -76,52 +77,63 @@ export default function CriarProjeto({ projeto, onSubmit }: CriarProjetoProps) {
           tipo: projeto.cidade.tipo,
         };
         setCidadeSelecionada(cidadeDTO);
+        setCidades([cidadeDTO]);
+        setBuscaRealizada(true);
       }
     }
   }, [projeto, user?.userId, reset]);
 
-  // Carregar todas as cidades ao montar o componente
+  // Lista de UFs brasileiras
+  const ufsDisponiveis = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
+
+  // Buscar cidades quando os filtros mudarem (com debounce)
   useEffect(() => {
-    const carregarCidades = async () => {
-      setLoadingCidades(true);
-      try {
-        const response = await cidadeService.listarPorTipo('OFICIAL', user?.userId);
-        setCidades(response);
-        setCidadesFiltradas(response);
-      } catch (error) {
-        console.error('Erro ao carregar cidades:', error);
-        handleOpenSnackbar('Erro ao carregar cidades', 'error');
-      } finally {
-        setLoadingCidades(false);
+    // Só busca se tiver pelo menos UF selecionado ou 3 caracteres no nome
+    if (filtroUF || filtroBusca.length >= 3) {
+      const timer = setTimeout(() => {
+        buscarCidades();
+      }, 500); // Debounce de 500ms
+
+      return () => clearTimeout(timer);
+    } else if (filtroBusca.length === 0 && !filtroUF) {
+      // Limpa resultados se não tiver filtros (exceto se já tiver cidade selecionada do projeto)
+      if (!projeto?.cidade) {
+        setCidades([]);
+        setBuscaRealizada(false);
       }
-    };
-
-    carregarCidades();
-  }, []);
-
-  // Filtrar cidades quando os filtros mudarem
-  useEffect(() => {
-    let resultado = [...cidades];
-
-    // Filtro por UF
-    if (filtroUF) {
-      resultado = resultado.filter(cidade => cidade.estado?.uf === filtroUF);
     }
+  }, [filtroUF, filtroBusca]);
 
-    // Filtro por busca (nome da cidade)
-    if (filtroBusca) {
-      resultado = resultado.filter(cidade =>
-        cidade.nome?.toLowerCase().includes(filtroBusca.toLowerCase())
-      );
+  const buscarCidades = async () => {
+    try {
+      setLoadingCidades(true);
+      let dados: CidadeDTO[] = [];
+
+      if (filtroUF && filtroBusca) {
+        // Buscar por UF e nome
+        dados = await cidadeService.buscarPorUfENome(filtroUF, filtroBusca);
+      } else if (filtroUF) {
+        // Buscar apenas por UF
+        dados = await cidadeService.buscarPorUf(filtroUF);
+      } else if (filtroBusca) {
+        // Buscar apenas por nome
+        dados = await cidadeService.buscarPorNome(filtroBusca);
+      }
+
+      setCidades(dados);
+      setBuscaRealizada(true);
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error);
+      handleOpenSnackbar('Erro ao buscar cidades', 'error');
+      setCidades([]);
+    } finally {
+      setLoadingCidades(false);
     }
-
-    setCidadesFiltradas(resultado);
-  }, [filtroUF, filtroBusca, cidades]);
-
-  // Obter lista única de UFs para o filtro
-  const ufsDisponiveis = Array.from(
-    new Set(cidades.map(c => c.estado?.uf).filter(Boolean))
-  ).sort();
+  };
 
   const criarProjetoMutation = useMutation({
     mutationFn: async (dadosProjeto: Projeto) => {
@@ -400,52 +412,66 @@ export default function CriarProjeto({ projeto, onSubmit }: CriarProjetoProps) {
 
         {/* Grid de cidades para seleção (modo criação/edição) */}
         {(isEditing || !projeto) && (
-          <Box sx={{ mb: 3, maxHeight: 400, overflowY: 'auto' }}>
+          <Box sx={{ mb: 3 }}>
             {loadingCidades ? (
-              <Typography variant="body2" color="text.secondary" align="center">
-                Carregando cidades...
-              </Typography>
-            ) : cidadesFiltradas.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" align="center">
-                Nenhuma cidade encontrada
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress color="success" />
+              </Box>
+            ) : !buscaRealizada ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <SearchIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="body1" color="text.secondary">
+                  Selecione um estado ou digite o nome da cidade (mínimo 3 caracteres)
+                </Typography>
+              </Box>
+            ) : cidades.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  Nenhuma cidade encontrada
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Tente ajustar os filtros de busca
+                </Typography>
+              </Box>
             ) : (
-              <Grid container spacing={2}>
-                {cidadesFiltradas.map((cidade) => (
-                  <Grid item xs={12} sm={6} md={4} key={cidade.id}>
-                    <Card
-                      onClick={() => setCidadeSelecionada(cidade)}
-                      sx={{
-                        cursor: 'pointer',
-                        border: '2px solid',
-                        borderColor: cidadeSelecionada?.id === cidade.id ? 'success.main' : 'transparent',
-                        backgroundColor: cidadeSelecionada?.id === cidade.id ? 'success.light' : 'background.paper',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            {cidade.nome}
+              <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                <Grid container spacing={2}>
+                  {cidades.map((cidade) => (
+                    <Grid item xs={12} sm={6} md={4} key={cidade.id}>
+                      <Card
+                        onClick={() => setCidadeSelecionada(cidade)}
+                        sx={{
+                          cursor: 'pointer',
+                          border: '2px solid',
+                          borderColor: cidadeSelecionada?.id === cidade.id ? 'success.main' : 'transparent',
+                          backgroundColor: cidadeSelecionada?.id === cidade.id ? 'success.light' : 'background.paper',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            transform: 'translateY(-2px)',
+                          },
+                        }}
+                      >
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                              {cidade.nome}
+                            </Typography>
+                            <Chip
+                              label={cidade.estado?.uf}
+                              color="primary"
+                              size="small"
+                            />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {cidade.estado?.nome}
                           </Typography>
-                          <Chip
-                            label={cidade.estado?.uf}
-                            color="primary"
-                            size="small"
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {cidade.estado?.nome}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
             )}
           </Box>
         )}

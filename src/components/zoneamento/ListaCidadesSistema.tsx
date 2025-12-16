@@ -30,52 +30,61 @@ type ListaCidadesSistemaProps = {
 export default function ListaCidadesSistema({ onRecarregar }: ListaCidadesSistemaProps = {}) {
   const navigate = useNavigate();
   const [cidades, setCidades] = useState<CidadeDTO[]>([]);
-  const [cidadesFiltradas, setCidadesFiltradas] = useState<CidadeDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filtroUF, setFiltroUF] = useState<string>('');
   const [filtroBusca, setFiltroBusca] = useState<string>('');
   const [cidadeSelecionada, setCidadeSelecionada] = useState<number | null>(null);
+  const [buscaRealizada, setBuscaRealizada] = useState(false);
   const user = useAppSelector((state) => state.auth.user);
 
+  // Lista de UFs brasileiras
+  const ufsDisponiveis = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
 
+  // Buscar cidades quando os filtros mudarem (com debounce para o campo de busca)
   useEffect(() => {
-    carregarCidades();
-  }, []);
+    // Só busca se tiver pelo menos UF selecionado ou 3 caracteres no nome
+    if (filtroUF || filtroBusca.length >= 3) {
+      const timer = setTimeout(() => {
+        buscarCidades();
+      }, 500); // Debounce de 500ms
 
-  useEffect(() => {
-    aplicarFiltros();
-  }, [filtroUF, filtroBusca, cidades]);
+      return () => clearTimeout(timer);
+    } else if (filtroBusca.length === 0 && !filtroUF) {
+      // Limpa resultados se não tiver filtros
+      setCidades([]);
+      setBuscaRealizada(false);
+    }
+  }, [filtroUF, filtroBusca]);
 
-  const carregarCidades = async () => {
+  const buscarCidades = async () => {
     try {
       setLoading(true);
-      const dados = await cidadeService.listarPorTipo('OFICIAL', user?.userId);
+      let dados: CidadeDTO[] = [];
+
+      if (filtroUF && filtroBusca) {
+        // Buscar por UF e nome
+        dados = await cidadeService.buscarPorUfENome(filtroUF, filtroBusca);
+      } else if (filtroUF) {
+        // Buscar apenas por UF
+        dados = await cidadeService.buscarPorUf(filtroUF);
+      } else if (filtroBusca) {
+        // Buscar apenas por nome
+        dados = await cidadeService.buscarPorNome(filtroBusca);
+      }
+
       setCidades(dados);
-      setCidadesFiltradas(dados);
+      setBuscaRealizada(true);
     } catch (error) {
-      console.error('Erro ao carregar cidades:', error);
+      console.error('Erro ao buscar cidades:', error);
+      setCidades([]);
     } finally {
       setLoading(false);
     }
   };
-
-  const aplicarFiltros = () => {
-    let resultado = [...cidades];
-
-    if (filtroUF) {
-      resultado = resultado.filter(cidade => cidade.estado.uf === filtroUF);
-    }
-
-    if (filtroBusca) {
-      resultado = resultado.filter(cidade =>
-        cidade.nome.toLowerCase().includes(filtroBusca.toLowerCase())
-      );
-    }
-
-    setCidadesFiltradas(resultado);
-  };
-
-  const ufsDisponiveis = Array.from(new Set(cidades.map(c => c.estado.uf))).sort();
 
   const visualizarCidade = (cidadeId: number) => {
     navigate(`/cidade/${cidadeId}`);
@@ -131,74 +140,91 @@ export default function ListaCidadesSistema({ onRecarregar }: ListaCidadesSistem
       </Grid>
 
       {/* Informações */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          {cidadesFiltradas.length} {cidadesFiltradas.length === 1 ? 'cidade encontrada' : 'cidades encontradas'}
-        </Typography>
-        {cidadeSelecionada && (
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<InfoIcon />}
-            onClick={() => visualizarCidade(cidadeSelecionada)}
-          >
-            Visualizar Informações
-          </Button>
-        )}
-      </Box>
+      {buscaRealizada && (
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            {cidades.length} {cidades.length === 1 ? 'cidade encontrada' : 'cidades encontradas'}
+          </Typography>
+          {cidadeSelecionada && (
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<InfoIcon />}
+              onClick={() => visualizarCidade(cidadeSelecionada)}
+            >
+              Visualizar Informações
+            </Button>
+          )}
+        </Box>
+      )}
+
+      {/* Mensagem inicial */}
+      {!buscaRealizada && !loading && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Pesquise por cidades
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Selecione um estado ou digite o nome de uma cidade (mínimo 3 caracteres)
+          </Typography>
+        </Box>
+      )}
 
       {/* Lista de Cidades */}
-      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-        <Grid container spacing={2}>
-          {cidadesFiltradas.map((cidade) => (
-            <Grid item xs={12} sm={6} md={4} key={cidade.id}>
-              <Card
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  border: cidadeSelecionada === cidade.id ? '2px solid #388e3c' : '1px solid #e0e0e0',
-                  bgcolor: cidadeSelecionada === cidade.id ? '#e8f5e9' : '#fff',
-                  '&:hover': {
-                    boxShadow: 4,
-                    transform: 'translateY(-4px)',
-                  },
-                }}
-                onClick={() => setCidadeSelecionada(cidade.id)}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="h6" component="div" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                      {cidade.nome}
-                    </Typography>
-                    <IconButton
+      {buscaRealizada && !loading && (
+        <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+          <Grid container spacing={2}>
+            {cidades.map((cidade) => (
+              <Grid item xs={12} sm={6} md={4} key={cidade.id}>
+                <Card
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    border: cidadeSelecionada === cidade.id ? '2px solid #388e3c' : '1px solid #e0e0e0',
+                    bgcolor: cidadeSelecionada === cidade.id ? '#e8f5e9' : '#fff',
+                    '&:hover': {
+                      boxShadow: 4,
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                  onClick={() => setCidadeSelecionada(cidade.id)}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Typography variant="h6" component="div" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {cidade.nome}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        color="success"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          visualizarCidade(cidade.id);
+                        }}
+                      >
+                        <InfoIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Chip
+                      label={cidade.estado.uf}
                       size="small"
                       color="success"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        visualizarCidade(cidade.id);
-                      }}
-                    >
-                      <InfoIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                  <Chip
-                    label={cidade.estado.uf}
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                    sx={{ fontWeight: 600 }}
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    {cidade.estado.nome}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      {cidade.estado.nome}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
-      {cidadesFiltradas.length === 0 && (
+      {buscaRealizada && !loading && cidades.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="text.secondary">
             Nenhuma cidade encontrada

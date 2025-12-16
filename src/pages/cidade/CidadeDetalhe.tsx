@@ -15,6 +15,39 @@ import { appBarSxMaterialCategoria } from '../../styles/sx/AppBar';
 import type { CidadeDTO } from '../../types/cidade/cidadeType';
 import type { ZoneamentoBioclimaticoDTO } from '../../types/zoneamentoBioclimatico/zoneamentoBioclimaticoType';
 
+// Mapeamento das zonas bioclimáticas para suas descrições
+const getDescricaoZonaBioclimatica = (zona: string): string => {
+  const mapeamento: Record<string, string> = {
+    '1R': 'Muito fria com inverno rigoroso',
+    '1M': 'Muito fria com inverno moderado',
+    '2R': 'Fria com inverno rigoroso',
+    '2M': 'Fria com inverno moderado',
+    '3A': 'Mista e úmida',
+    '3B': 'Mista e seca',
+    '4A': 'Levemente quente e úmida',
+    '4B': 'Levemente quente e seca',
+    '5A': 'Quente e úmida',
+    '5B': 'Quente e seca',
+    '6A': 'Muito quente e úmida',
+    '6B': 'Muito quente e seca',
+  };
+  return mapeamento[zona] || 'Descrição não disponível';
+};
+
+// Função para obter cor baseada na zona bioclimática
+const getCorZonaBioclimatica = (zona: string): string => {
+  const primeiroCaractere = zona.charAt(0);
+  const cores: Record<string, string> = {
+    '1': '#1976d2', // Azul - Muito fria
+    '2': '#0288d1', // Azul claro - Fria
+    '3': '#66bb6a', // Verde - Mista
+    '4': '#ffa726', // Laranja - Levemente quente
+    '5': '#ef5350', // Vermelho - Quente
+    '6': '#d32f2f', // Vermelho escuro - Muito quente
+  };
+  return cores[primeiroCaractere] || '#2e7d32';
+};
+
 export default function CidadeDetalhe() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -164,16 +197,44 @@ export default function CidadeDetalhe() {
           {zoneamento ? (
             <>
               {/* Zona Bioclimática */}
-              <Paper elevation={3} sx={{ p: 3, mb: 3, bgcolor: '#e8f5e9' }}>
-                <Typography variant="h6" color="success.main" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  background: `linear-gradient(135deg, ${getCorZonaBioclimatica(zoneamento.zonaBioclimatica)}15 0%, ${getCorZonaBioclimatica(zoneamento.zonaBioclimatica)}30 100%)`,
+                  border: `2px solid ${getCorZonaBioclimatica(zoneamento.zonaBioclimatica)}`,
+                }}
+              >
+                <Typography variant="h6" sx={{ color: getCorZonaBioclimatica(zoneamento.zonaBioclimatica), display: 'flex', alignItems: 'center', gap: 1 }}>
                   <ThermostatIcon /> Zona Bioclimática
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ mb: 2, borderColor: getCorZonaBioclimatica(zoneamento.zonaBioclimatica) }} />
 
                 <Box sx={{ textAlign: 'center', py: 2 }}>
-                  <Typography variant="h2" fontWeight={700} color="success.main">
+                  <Typography
+                    variant="h2"
+                    fontWeight={700}
+                    sx={{ color: getCorZonaBioclimatica(zoneamento.zonaBioclimatica), mb: 2 }}
+                  >
                     {zoneamento.zonaBioclimatica}
                   </Typography>
+                  <Chip
+                    label={getDescricaoZonaBioclimatica(zoneamento.zonaBioclimatica)}
+                    sx={{
+                      bgcolor: getCorZonaBioclimatica(zoneamento.zonaBioclimatica),
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      py: 2.5,
+                      px: 1,
+                      height: 'auto',
+                      '& .MuiChip-label': {
+                        whiteSpace: 'normal',
+                        textAlign: 'center',
+                      },
+                    }}
+                  />
                 </Box>
               </Paper>
 
